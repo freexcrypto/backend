@@ -11,25 +11,12 @@ import { v4 as uuidv4 } from "uuid";
 
 export async function orderOnboardingHandler(req: Request, res: Response) {
   try {
-    const {
-      client_id,
-      sender_address_wallet,
-      business_id,
-      expired_at,
-      success_url,
-      transaction_hash,
-      items,
-    } = req.body;
+    const { client_id, business_id, expired_at, success_url, items } = req.body;
     if (!client_id) {
       return res.status(400).json({ error: "client_id is required" });
     }
     if (!business_id) {
       return res.status(400).json({ error: "business_id is required" });
-    }
-    if (!sender_address_wallet) {
-      return res
-        .status(400)
-        .json({ error: "sender_address_wallet is required" });
     }
     if (!expired_at) {
       return res.status(400).json({ error: "expired_at is required" });
@@ -70,7 +57,7 @@ export async function orderOnboardingHandler(req: Request, res: Response) {
       0
     );
     const id = uuidv4();
-    const url = `https://api.cryptolink.io/v1/checkout/${id}?${business_id}`;
+    const url = `${process.env.PAYMENT_LINK_BASE_URL}/checkout/${id}`;
     // Fetch business wallet address
     const { data: business, error: businessError } = await supabase
       .from("business")
@@ -88,15 +75,13 @@ export async function orderOnboardingHandler(req: Request, res: Response) {
       id,
       client_id,
       chain_id: 1135,
-      sender_address_wallet,
       business_id,
       destination_address_wallet,
       total_price,
       expired_at: new Date(expired_at),
       payment_url: url,
       success_url,
-      status_message: "WAITING_FOR_PAYMENT",
-      transaction_hash,
+      status_message: "active",
       items,
     });
     return res.status(201).json({ message: "Order created", order });
@@ -107,8 +92,14 @@ export async function orderOnboardingHandler(req: Request, res: Response) {
 
 export async function updateOrderStatusHandler(req: Request, res: Response) {
   try {
-    const { id, statusMessage, transaction_hash } = req.body;
-    if (!id || !statusMessage) {
+    const {
+      id,
+      sender_address_wallet,
+      status_message,
+      transaction_hash,
+      status,
+    } = req.body;
+    if (!id || !status_message) {
       return res
         .status(400)
         .json({ error: "id and statusMessage are required" });
@@ -116,8 +107,10 @@ export async function updateOrderStatusHandler(req: Request, res: Response) {
     await supabase
       .from("order")
       .update({
-        statusMessage,
+        sender_address_wallet,
+        status_message,
         transaction_hash,
+        status,
       })
       .eq("id", id);
     res.status(200).json({ message: "Order statuses updated" });
