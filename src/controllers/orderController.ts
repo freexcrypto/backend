@@ -92,13 +92,8 @@ export async function orderOnboardingHandler(req: Request, res: Response) {
 
 export async function updateOrderStatusHandler(req: Request, res: Response) {
   try {
-    const {
-      id,
-      sender_address_wallet,
-      status_message,
-      transaction_hash,
-      status,
-    } = req.body;
+    const { id, sender_address_wallet, status_message, transaction_hash } =
+      req.body;
     if (!id || !status_message) {
       return res
         .status(400)
@@ -110,7 +105,6 @@ export async function updateOrderStatusHandler(req: Request, res: Response) {
         sender_address_wallet,
         status_message,
         transaction_hash,
-        status,
       })
       .eq("id", id);
     res.status(200).json({ message: "Order statuses updated" });
