@@ -96,7 +96,8 @@ export async function getOrdersByBusinessId(
   const { data: orders, error } = await supabase
     .from("order")
     .select("*")
-    .eq("business_id", business_id);
+    .eq("business_id", business_id)
+    .order("created_at", { ascending: false });
   if (error || !orders) return [];
   // Fetch items for all orders
   const orderIds = orders.map((o: any) => o.id);
