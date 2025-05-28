@@ -8,6 +8,10 @@ import {
   getRecentPaidPaymentLinks,
 } from "../repositories/paymentLinkRepository";
 
+import { parseUnits } from "viem";
+import { getBusinessWalletAddress } from "../repositories/businessRepository";
+import QRCode from "qrcode";
+
 export const createPaymentLinkHandler = async (req: Request, res: Response) => {
   try {
     const { business_id, title, description, amount } = req.body;
@@ -20,13 +24,26 @@ export const createPaymentLinkHandler = async (req: Request, res: Response) => {
     const payment_link = `${process.env.PAYMENT_LINK_BASE_URL}/pay/${paymentLinkId}`;
     const expired_at = new Date(Date.now() + 1000 * 60 * 60); // 1 hour expiry
 
+    // Parse amount as string to manipulate digits
+    let amountStr = String(amount);
+    const randomDigits = String(Math.floor(Math.random() * 1000)).padStart(
+      3,
+      "0"
+    );
+    if (amountStr.length > 3) {
+      amountStr = amountStr.slice(0, -3) + randomDigits;
+    } else {
+      amountStr = randomDigits; // If amount is less than 3 digits, just use random
+    }
+    const randomizedAmount = Number(amountStr);
+
     const toInsert = {
       id: paymentLinkId,
       business_id,
       title,
       description,
       payment_link,
-      amount,
+      amount: randomizedAmount,
       expired_at,
       status: "active",
     };
@@ -40,6 +57,44 @@ export const createPaymentLinkHandler = async (req: Request, res: Response) => {
   } catch (error) {
     console.error(error); //
     res.status(500).json({ error: "Failed to create payment link" });
+  }
+};
+export const getQRCodeHandler = async (req: Request, res: Response) => {
+  try {
+    const { id, business_id, chain_id } = req.params;
+    const paymentLink = await getPaymentLink(id);
+
+    if (!paymentLink) {
+      return res.status(404).json({ error: "Payment link not found" });
+    }
+
+    let contractAddress = "";
+
+    if (chain_id === "4202") {
+      contractAddress = "0xD63029C1a3dA68b51c67c6D1DeC3DEe50D681661";
+    } else if (chain_id === "84532") {
+      contractAddress = "0xDA76705ADE18F3ecd5cF5E90861dB160F4AE7F34";
+    }
+
+    console.log(contractAddress);
+
+    const destination_address_wallet = await getBusinessWalletAddress(
+      business_id
+    );
+    if (!destination_address_wallet) {
+      return res.status(404).json({ error: "Business not found" });
+    }
+
+    const formattedAmount = parseUnits(paymentLink.amount.toString(), 2);
+
+    const url = `ethereum:${contractAddress}/transfer?address=${destination_address_wallet}&uint256=${formattedAmount}`;
+
+    const qrCode = await QRCode.toDataURL(url);
+
+    res.json({ message: "QR code created", data: qrCode });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to get QR code" });
   }
 };
 

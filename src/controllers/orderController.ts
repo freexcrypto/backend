@@ -58,6 +58,7 @@ export async function orderOnboardingHandler(req: Request, res: Response) {
     );
     const id = uuidv4();
     const url = `${process.env.PAYMENT_LINK_BASE_URL}/checkout/${id}`;
+
     // Fetch business wallet address
     const { data: business, error: businessError } = await supabase
       .from("business")
@@ -69,6 +70,7 @@ export async function orderOnboardingHandler(req: Request, res: Response) {
         .status(404)
         .json({ error: "Business wallet address not found" });
     }
+
     const destination_address_wallet = business.address_wallet;
     // Save the order to the database
     const order = await createNewOrder({
