@@ -16,7 +16,7 @@ app.use(
       "http://localhost:3001",
       "http://localhost:3000",
       "https://www.freexcrypto.xyz",
-      "https://frontend-freex.vercel.app/",
+      "https://frontend-freex.vercel.app",
     ],
     credentials: true,
   })
