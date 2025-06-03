@@ -14,9 +14,17 @@ import QRCode from "qrcode";
 
 export const createPaymentLinkHandler = async (req: Request, res: Response) => {
   try {
-    const { business_id, title, description, amount } = req.body;
+    const { business_id, title, description, amount, chain_id, chain_name } =
+      req.body;
 
-    if (!business_id || !title || !description || !amount) {
+    if (
+      !business_id ||
+      !title ||
+      !description ||
+      !amount ||
+      !chain_id ||
+      !chain_name
+    ) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
@@ -30,12 +38,16 @@ export const createPaymentLinkHandler = async (req: Request, res: Response) => {
       3,
       "0"
     );
-    if (amountStr.length > 3) {
-      amountStr = amountStr.slice(0, -3) + randomDigits;
-    } else {
-      amountStr = randomDigits; // If amount is less than 3 digits, just use random
-    }
-    const randomizedAmount = Number(amountStr);
+
+    let randomizedAmount;
+
+    // if (amountStr.length === 1) {
+    //   // Kalau jumlah digit hanya 1 (misal: 5)
+    //   randomizedAmount = Number(`${amountStr}.${randomDigits}`);
+    // } else {
+    //   // Kalau lebih dari 1 digit, bisa tetap atau pakai logika lain
+    //   randomizedAmount = Number(amountStr);
+    // }
 
     const toInsert = {
       id: paymentLinkId,
@@ -43,9 +55,11 @@ export const createPaymentLinkHandler = async (req: Request, res: Response) => {
       title,
       description,
       payment_link,
-      amount: randomizedAmount,
+      amount: (randomizedAmount = Number(`${amountStr}.${randomDigits}`)),
       expired_at,
       status: "active",
+      chain_id,
+      chain_name,
     };
 
     const saved = await createPaymentLink(toInsert);
