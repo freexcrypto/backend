@@ -147,14 +147,20 @@ export const getAllPaymentLinksHandler = async (
 export const updatePaymentLinkHandler = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { sender_address_wallet, customer_name, transaction_hash, status } =
-      req.body;
+    const {
+      sender_address_wallet,
+      customer_name,
+      transaction_hash,
+      status,
+      sender_chain_name,
+    } = req.body;
 
     const update = {
       sender_address_wallet,
       customer_name,
       transaction_hash,
       status,
+      sender_chain_name,
     };
 
     const updated = await updatePaymentLink(id, update);
