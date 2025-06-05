@@ -13,7 +13,7 @@ const router = Router();
 router.post("/create", createPaymentLinkHandler as RequestHandler);
 
 router.get(
-  "/qr/:id/:business_id/:chain_id",
+  "/qr/:id/:business_id/:chain_id/:contract_address",
   getQRCodeHandler as RequestHandler
 );
 

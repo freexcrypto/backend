@@ -14,8 +14,15 @@ import QRCode from "qrcode";
 
 export const createPaymentLinkHandler = async (req: Request, res: Response) => {
   try {
-    const { business_id, title, description, amount, chain_id, chain_name } =
-      req.body;
+    const {
+      business_id,
+      title,
+      description,
+      amount,
+      chain_id,
+      chain_name,
+      recieve_token,
+    } = req.body;
 
     if (
       !business_id ||
@@ -23,7 +30,8 @@ export const createPaymentLinkHandler = async (req: Request, res: Response) => {
       !description ||
       !amount ||
       !chain_id ||
-      !chain_name
+      !chain_name ||
+      !recieve_token
     ) {
       return res.status(400).json({ error: "Missing required fields" });
     }
@@ -60,6 +68,7 @@ export const createPaymentLinkHandler = async (req: Request, res: Response) => {
       status: "active",
       chain_id,
       chain_name,
+      recieve_token,
     };
 
     const saved = await createPaymentLink(toInsert);
@@ -75,22 +84,12 @@ export const createPaymentLinkHandler = async (req: Request, res: Response) => {
 };
 export const getQRCodeHandler = async (req: Request, res: Response) => {
   try {
-    const { id, business_id, chain_id } = req.params;
+    const { id, business_id, chain_id, contract_address } = req.params;
     const paymentLink = await getPaymentLink(id);
 
     if (!paymentLink) {
       return res.status(404).json({ error: "Payment link not found" });
     }
-
-    let contractAddress = "";
-
-    if (chain_id === "4202") {
-      contractAddress = "0xD63029C1a3dA68b51c67c6D1DeC3DEe50D681661";
-    } else if (chain_id === "84532") {
-      contractAddress = "0xDA76705ADE18F3ecd5cF5E90861dB160F4AE7F34";
-    }
-
-    console.log(contractAddress);
 
     const destination_address_wallet = await getBusinessWalletAddress(
       business_id
@@ -99,9 +98,9 @@ export const getQRCodeHandler = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Business not found" });
     }
 
-    const formattedAmount = parseUnits(paymentLink.amount.toString(), 2);
+    const formattedAmount = parseUnits(paymentLink.amount.toString(), 18);
 
-    const url = `ethereum:${contractAddress}/transfer?address=${destination_address_wallet}&uint256=${formattedAmount}`;
+    const url = `ethereum:${contract_address}@${chain_id}/transfer?address=${destination_address_wallet}&uint256=${formattedAmount}`;
 
     const qrCode = await QRCode.toDataURL(url);
 
