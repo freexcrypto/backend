@@ -40,22 +40,13 @@ export const createPaymentLinkHandler = async (req: Request, res: Response) => {
     const payment_link = `${process.env.PAYMENT_LINK_BASE_URL}/pay/${paymentLinkId}`;
     const expired_at = new Date(Date.now() + 1000 * 60 * 60); // 1 hour expiry
 
-    // Parse amount as string to manipulate digits
-    let amountStr = String(amount);
-    const randomDigits = String(Math.floor(Math.random() * 1000)).padStart(
-      3,
-      "0"
-    );
+    // Generate random digits after decimal point (4-6 digits)
+    const decimalPlaces = Math.floor(Math.random() * 3) + 4; // Random number between 4-6
+    const randomDigits = String(
+      Math.floor(Math.random() * Math.pow(10, decimalPlaces))
+    ).padStart(decimalPlaces, "0");
 
-    let randomizedAmount;
-
-    // if (amountStr.length === 1) {
-    //   // Kalau jumlah digit hanya 1 (misal: 5)
-    //   randomizedAmount = Number(`${amountStr}.${randomDigits}`);
-    // } else {
-    //   // Kalau lebih dari 1 digit, bisa tetap atau pakai logika lain
-    //   randomizedAmount = Number(amountStr);
-    // }
+    const randomizedAmount = Number(`0.00${randomDigits}`);
 
     const toInsert = {
       id: paymentLinkId,
@@ -63,7 +54,7 @@ export const createPaymentLinkHandler = async (req: Request, res: Response) => {
       title,
       description,
       payment_link,
-      amount: (randomizedAmount = Number(`${amountStr}.${randomDigits}`)),
+      amount: Number(amount) + randomizedAmount,
       expired_at,
       status: "active",
       chain_id,
