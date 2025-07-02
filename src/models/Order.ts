@@ -2,6 +2,7 @@ export interface Order {
   id: string;
   client_id: string;
   chain_id: number;
+  chain_name: string;
   sender_address_wallet?: string;
   business_id: string;
   destination_address_wallet: string;

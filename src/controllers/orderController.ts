@@ -11,7 +11,15 @@ import { v4 as uuidv4 } from "uuid";
 
 export async function orderOnboardingHandler(req: Request, res: Response) {
   try {
-    const { client_id, business_id, expired_at, success_url, items } = req.body;
+    const {
+      client_id,
+      business_id,
+      expired_at,
+      success_url,
+      chain_id,
+      chain_name,
+      items,
+    } = req.body;
     if (!client_id) {
       return res.status(400).json({ error: "client_id is required" });
     }
@@ -23,6 +31,12 @@ export async function orderOnboardingHandler(req: Request, res: Response) {
     }
     if (!success_url) {
       return res.status(400).json({ error: "success_url is required" });
+    }
+    if (!chain_id) {
+      return res.status(400).json({ error: "chain_id is required" });
+    }
+    if (!chain_name) {
+      return res.status(400).json({ error: "chain_name is required" });
     }
     if (!items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ error: "At least one item is required" });
@@ -76,7 +90,7 @@ export async function orderOnboardingHandler(req: Request, res: Response) {
     const order = await createNewOrder({
       id,
       client_id,
-      chain_id: 1135,
+      chain_id,
       business_id,
       destination_address_wallet,
       total_price,
@@ -84,6 +98,7 @@ export async function orderOnboardingHandler(req: Request, res: Response) {
       payment_url: url,
       success_url,
       status_message: "active",
+      chain_name,
       items,
     });
     return res.status(201).json({ message: "Order created", order });
